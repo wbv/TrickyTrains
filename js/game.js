@@ -1,6 +1,7 @@
 var s = Snap("#svg");
 
-// key-value objects which translate a color string to the needed colors
+// key-value objects which translate a color string to the needed colors.
+// you could think of this as a theme, if you want.
 var route_fill_color = {
     "red":   "#f00",
     "blue":  "#00f",
@@ -21,6 +22,20 @@ var route_fill_opacity = {
     "green": 0.75,
     "gray":  0.50,
     "black": 0.75
+}
+
+function makeNode(name, x, y) {
+    var newnode = s.circle(x, y, 10).attr({
+        "id": name
+    });
+
+    newnode.hover(function () {
+        newnode.animate({r:15}, 300);
+    }, function () {
+        newnode.animate({r:10}, 300);
+    });
+
+    return newnode;
 }
 
 //* makeEdge()
@@ -44,7 +59,9 @@ function makeEdge(node_start, node_end, weight, colors) {
     var block_length = Math.hypot((e_x - s_x), (e_y - s_y)) / weight;
 
     // this SVG "g" element will hold all the blocks
-    var edge = s.g();
+    var edge = s.g().attr({
+        "id": node_start.attr("id") + node_end.attr("id")
+    });
 
     // helper function to draw the individual blocks of a single color
     function makeRoute(offset, color) {
@@ -83,21 +100,22 @@ function makeEdge(node_start, node_end, weight, colors) {
 
 // Declaration of map elements
 var nodes = [
-    node_A = s.circle(200, 100, 10),
-    node_B = s.circle(300, 200, 10),
-    node_C = s.circle(200, 300, 10),
-    node_D = s.circle(100, 200, 10),
-    node_E = s.circle(400, 400, 10)
+    node_A = makeNode("A", 200, 100),
+    node_B = makeNode("B", 300, 200),
+    node_C = makeNode("C", 200, 300),
+    node_D = makeNode("D", 100, 200),
+    node_E = makeNode("E", 400, 400),
 ];
-//* edges
-var edge_AB = makeEdge(node_A, node_B, 3, ["blue"]);
-var edge_BE = makeEdge(node_B, node_E, 5, ["red"]);
-var edge_BD = makeEdge(node_B, node_D, 4, ["gray"]);
-var edge_CB = makeEdge(node_C, node_B, 3, ["black", "blue"]);
-var edge_CE = makeEdge(node_C, node_E, 6, ["green"]);
+var edges = [
+    edge_AB = makeEdge(node_A, node_B, 3, ["blue"]),
+    edge_BE = makeEdge(node_B, node_E, 5, ["red"]),
+    edge_BD = makeEdge(node_B, node_D, 4, ["gray"]),
+    edge_CB = makeEdge(node_C, node_B, 3, ["black", "blue"]),
+    edge_CE = makeEdge(node_C, node_E, 6, ["green"]),
+    edge_AD = makeEdge(node_A, node_D, 4, ["gray", "gray"]),
+];
 
-//nodes = [node_A, node_B, node_C, node_D, node_E];
-
+// modify nodes to do things
 nodes.forEach(function (n, index) {
     // makes each point expand on hover
     n.hover(function () {
