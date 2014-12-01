@@ -117,12 +117,6 @@ var edges = [
 
 // modify nodes to do things
 nodes.forEach(function (n, index) {
-    // makes each point expand on hover
-    n.hover(function () {
-        n.animate({r:15}, 300);
-    }, function () {
-        n.animate({r:10}, 300);
-    });
     // rearranges the nodes to appear on top of the routes
     n.appendTo(s);
 });
