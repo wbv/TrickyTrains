@@ -24,7 +24,17 @@ var route_fill_opacity = {
     "black": 0.75
 }
 
-function makeNode(name, x, y) {
+//* makeNode()
+// creates a circle and a text label at the given coordinates. The text label
+// (the object returned by the Snap.text method) can be accessed by the the
+// makeNode-returned object's attribute of "label" (e.g. Node_A.label). The
+// optional offset arguments can place the label anywhere around the node
+function makeNode(name, x, y, label_x_offset, label_y_offset) {
+    // label_x_offset and label_y_offset are optional arguments here,
+    // the numbers on the far right are default values if they are undefined
+    label_x_offset = label_x_offset || 10;
+    label_y_offset = label_y_offset || -10;
+
     var newnode = s.circle(x, y, 10).attr({
         "id": name
     });
@@ -33,6 +43,11 @@ function makeNode(name, x, y) {
         newnode.animate({r:15}, 300);
     }, function () {
         newnode.animate({r:10}, 300);
+    });
+
+    newnode.label = s.text(x + label_x_offset, y + label_y_offset, name);
+    newnode.label.attr({
+        "font-weight": "bold"
     });
 
     return newnode;
@@ -102,8 +117,8 @@ function makeEdge(node_start, node_end, weight, colors) {
 var nodes = [
     node_A = makeNode("A", 200, 100),
     node_B = makeNode("B", 300, 200),
-    node_C = makeNode("C", 200, 300),
-    node_D = makeNode("D", 100, 200),
+    node_C = makeNode("C", 200, 300, -20), // put label off to the left
+    node_D = makeNode("D", 100, 200, -20), // ^
     node_E = makeNode("E", 400, 400),
     node_F = makeNode("F", 330, 77),
 ];
