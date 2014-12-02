@@ -105,6 +105,7 @@ var nodes = [
     node_C = makeNode("C", 200, 300),
     node_D = makeNode("D", 100, 200),
     node_E = makeNode("E", 400, 400),
+    node_F = makeNode("F", 330, 77),
 ];
 var edges = [
     edge_AB = makeEdge(node_A, node_B, 3, ["blue"]),
@@ -113,6 +114,8 @@ var edges = [
     edge_CB = makeEdge(node_C, node_B, 3, ["black", "blue"]),
     edge_CE = makeEdge(node_C, node_E, 6, ["green"]),
     edge_AD = makeEdge(node_A, node_D, 4, ["gray", "gray"]),
+    edge_AF = makeEdge(node_A, node_F, 4, ["red"]),
+    edge_EF = makeEdge(node_E, node_F, 7, ["gray"]),
 ];
 
 // modify nodes to do things
