@@ -35,14 +35,14 @@ function makeNode(name, x, y, label_x_offset, label_y_offset) {
     label_x_offset = label_x_offset || 10;
     label_y_offset = label_y_offset || -10;
 
-    var newnode = s.circle(x, y, 10).attr({
+    var newnode = s.circle(x, y, 8).attr({
         "id": name
     });
 
     newnode.hover(function () {
-        newnode.animate({r:15}, 300);
-    }, function () {
         newnode.animate({r:10}, 300);
+    }, function () {
+        newnode.animate({r:8}, 300);
     });
 
     newnode.label = s.text(x + label_x_offset, y + label_y_offset, name);
