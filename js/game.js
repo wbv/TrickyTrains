@@ -1,4 +1,4 @@
-var s = Snap("#svg");
+var s = Snap(800,600);
 
 // key-value objects which translate a color string to the needed colors.
 // you could think of this as a theme, if you want.
