@@ -7,24 +7,32 @@ var route_fill_color = {
     "blue":  "#00f",
     "green": "#0f0",
     "gray":  "#666",
-    "black": "#111"
+    "black": "#111",
 }
 var route_stroke_color = {
     "red":   "#555",
     "blue":  "#555",
     "green": "#555",
     "gray":  "#555",
-    "black": "#ddd"
+    "black": "#555",
 }
-var route_fill_opacity = {
-    "red":   0.75,
-    "blue":  0.75,
-    "green": 0.75,
-    "gray":  0.50,
-    "black": 0.75
+var route_empty_opacity = {
+    "red":   0.35,
+    "blue":  0.35,
+    "green": 0.35,
+    "gray":  0.20,
+    "black": 0.35,
+}
+var route_filled_opacity = {
+    "red":   0.95,
+    "blue":  0.95,
+    "green": 0.95,
+    "gray":  0.95,
+    "black": 0.95,
 }
 
 //* makeNode()
+// a Node in this context refers to a location on the game map. This function
 // creates a circle and a text label at the given coordinates. The text label
 // (the object returned by the Snap.text method) can be accessed by the the
 // makeNode-returned object's attribute of "label" (e.g. Node_A.label). The
@@ -35,22 +43,42 @@ function makeNode(name, x, y, label_x_offset, label_y_offset) {
     label_x_offset = label_x_offset || 10;
     label_y_offset = label_y_offset || -10;
 
-    var newnode = s.circle(x, y, 8).attr({
+    var container = s.g().attr({
         "id": name
     });
+    container.id = name;
 
+    var newnode = s.circle(x, y, 8);
+
+    // create hover-behavior animation
     newnode.hover(function () {
         newnode.animate({r:10}, 300);
     }, function () {
         newnode.animate({r:8}, 300);
     });
 
+    // create the text label for your location
     newnode.label = s.text(x + label_x_offset, y + label_y_offset, name);
     newnode.label.attr({
         "font-weight": "bold"
     });
 
-    return newnode;
+    // put the circle and text (label) inside the g element
+    container.append(newnode);
+    container.append(newnode.label);
+
+    // define an attribute to make it easy to look at the node's circle
+    container.point = newnode;
+
+    // define an attribute for an Array of neighboring nodes.
+    // this is populated when creating an edge between location nodes
+    container.neighbors = [];
+
+    // define an attribute for an Array of connecting paths
+    // this is populated when creating an edge between location nodes
+    container.paths = [];
+
+    return container;
 }
 
 //* makeEdge()
@@ -64,12 +92,13 @@ function makeNode(name, x, y, label_x_offset, label_y_offset) {
 // which contains all the 'rect's which are the drawn blocks.
 function makeEdge(node_start, node_end, weight, colors) {
     // x & y coordinates of start & end nodes
-    var s_x = parseFloat(node_start.attr("cx"));
-    var s_y = parseFloat(node_start.attr("cy"));
-    var e_x = parseFloat(node_end.attr("cx"));
-    var e_y = parseFloat(node_end.attr("cy"));
+    var s_x = parseFloat(node_start.point.attr("cx"));
+    var s_y = parseFloat(node_start.point.attr("cy"));
+    var e_x = parseFloat(node_end.point.attr("cx"));
+    var e_y = parseFloat(node_end.point.attr("cy"));
 
-    // by default, 0 degrees is "left". this makes 0 degrees = "right"
+    // by default, 0 degrees is "left".
+    // subtract by 180 degrees to make 0 degrees = "right"
     var path_angle = Snap.angle(s_x, s_y, e_x, e_y) - 180;
     var block_length = Math.hypot((e_x - s_x), (e_y - s_y)) / weight;
 
@@ -77,6 +106,7 @@ function makeEdge(node_start, node_end, weight, colors) {
     var edge = s.g().attr({
         "id": node_start.attr("id") + node_end.attr("id")
     });
+    edge.id = node_start.id + node_end.id;
 
     // helper function to draw the individual blocks of a single color
     function makeRoute(offset, color) {
@@ -91,7 +121,7 @@ function makeEdge(node_start, node_end, weight, colors) {
             block.attr({
                 "stroke":       route_stroke_color[color],
                 "fill":         route_fill_color[color],
-                "fill-opacity": route_fill_opacity[color],
+                "fill-opacity": route_empty_opacity[color],
                 "strokeWidth": 1
             });
             block.transform("rotate("+path_angle+","+s_x+","+s_y+")");
@@ -101,6 +131,7 @@ function makeEdge(node_start, node_end, weight, colors) {
         return route;
     }
 
+    // create the appropriate number of paths
     if (colors.length == 2) {
         edge.append(makeRoute(3, colors[0]));
         edge.append(makeRoute(-3, colors[1]));
@@ -109,6 +140,14 @@ function makeEdge(node_start, node_end, weight, colors) {
     } else {
         console.log("makeEdge: invalid array size of colors given\n");
     }
+
+    // add the appropriate neighbor node to each node
+    node_start.neighbors.push(node_end);
+    node_end.neighbors.push(node_start);
+
+    // add this path to each node
+    node_start.paths.push(edge);
+    node_end.paths.push(edge);
 
     return edge;
 }
