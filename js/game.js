@@ -31,13 +31,12 @@ var route_filled_opacity = {
     "black": 0.95,
 }
 
-//* makeNode()
-// a Node in this context refers to a location on the game map. This function
+//* makeLocation()
 // creates a circle and a text label at the given coordinates. The text label
 // (the object returned by the Snap.text method) can be accessed by the the
-// makeNode-returned object's attribute of "label" (e.g. Node_A.label). The
-// optional offset arguments can place the label anywhere around the node
-function makeNode(name, x, y, label_x_offset, label_y_offset) {
+// makeLocation-returned object's attribute of "label" (e.g. location_A.label). The
+// optional offset arguments can place the label anywhere around the location
+function makeLocation(name, x, y, label_x_offset, label_y_offset) {
     // label_x_offset and label_y_offset are optional arguments here,
     // the numbers on the far right are default values if they are undefined
     label_x_offset = label_x_offset || 10;
@@ -48,54 +47,60 @@ function makeNode(name, x, y, label_x_offset, label_y_offset) {
     });
     container.id = name;
 
-    var newnode = s.circle(x, y, 8);
+    var newlocation = s.circle(x, y, 8);
 
     // create hover-behavior animation
-    newnode.hover(function () {
-        newnode.animate({r:10}, 300);
+    newlocation.hover(function () {
+        newlocation.animate({r:10}, 300);
     }, function () {
-        newnode.animate({r:8}, 300);
+        newlocation.animate({r:8}, 300);
     });
 
     // create the text label for your location
-    newnode.label = s.text(x + label_x_offset, y + label_y_offset, name);
-    newnode.label.attr({
+    newlocation.label = s.text(x + label_x_offset, y + label_y_offset, name);
+    newlocation.label.attr({
         "font-weight": "bold"
     });
 
     // put the circle and text (label) inside the g element
-    container.append(newnode);
-    container.append(newnode.label);
+    container.append(newlocation);
+    container.append(newlocation.label);
 
-    // define an attribute to make it easy to look at the node's circle
-    container.point = newnode;
+    // attribute to make it easy to look at the location's SVG circle element
+    container.point = newlocation;
 
-    // define an attribute for an Array of neighboring nodes.
-    // this is populated when creating an edge between location nodes
+    // attribute for an Array of neighboring locations.
+    // this is populated when creating an path between locations
     container.neighbors = [];
 
-    // define an attribute for an Array of connecting paths
-    // this is populated when creating an edge between location nodes
+    // attribute for an Array of connecting paths
+    // this is populated when creating an path between locations
     container.paths = [];
+
+    // attributes determining whether or not the location has been clicked,
+    // and in what context. Selected means a start point, suggested locations
+    // appear highlighted when a location is selected.
+    container.selected = false;
+    container.suggested = false;
 
     return container;
 }
 
-//* makeEdge()
-// creates an edge between two nodes, given the nodes, the number of blocks,
-// and colors, which is either a one-element or two-element array.
+//* makePath()
+// creates a path between two locations, given the locations, the number of
+// blocks, and colors, which is either a one-element or two-element array.
 // if two-element, then two routes are created parallel to each other in place
 // of one, and each is given its corresponding color. Otherwise, one route is
-// placed in between the nodes, with its corresponding color.
+// placed in between the locations, with its corresponding color.
 //
-// an edge consists of a g element, containing one or two g-elements, each of
+// a path consists of a g element, containing one or two g-elements, each of
 // which contains all the 'rect's which are the drawn blocks.
-function makeEdge(node_start, node_end, weight, colors) {
-    // x & y coordinates of start & end nodes
-    var s_x = parseFloat(node_start.point.attr("cx"));
-    var s_y = parseFloat(node_start.point.attr("cy"));
-    var e_x = parseFloat(node_end.point.attr("cx"));
-    var e_y = parseFloat(node_end.point.attr("cy"));
+function makePath(location_start, location_end, weight, colors) {
+    // x & y coordinates of start & end locations
+    var s_x = parseFloat(location_start.point.attr("cx"));
+    var s_y = parseFloat(location_start.point.attr("cy"));
+    var e_x = parseFloat(location_end.point.attr("cx"));
+    var e_y = parseFloat(location_end.point.attr("cy"));
 
     // by default, 0 degrees is "left".
     // subtract by 180 degrees to make 0 degrees = "right"
@@ -103,10 +108,10 @@ function makeEdge(node_start, node_end, weight, colors) {
     var block_length = Math.hypot((e_x - s_x), (e_y - s_y)) / weight;
 
     // this SVG "g" element will hold all the blocks
-    var edge = s.g().attr({
-        "id": node_start.attr("id") + node_end.attr("id")
+    var path = s.g().attr({
+        "id": location_start.attr("id") + location_end.attr("id")
     });
-    edge.id = node_start.id + node_end.id;
+    path.id = location_start.id + location_end.id;
 
     // helper function to draw the individual blocks of a single color
     function makeRoute(offset, color) {
@@ -133,47 +138,44 @@ function makeEdge(node_start, node_end, weight, colors) {
 
     // create the appropriate number of paths
     if (colors.length == 2) {
-        edge.append(makeRoute(3, colors[0]));
-        edge.append(makeRoute(-3, colors[1]));
+        path.append(makeRoute(3, colors[0]));
+        path.append(makeRoute(-3, colors[1]));
     } else if (colors.length == 1) {
-        edge.append(makeRoute(0, colors[0]));
+        path.append(makeRoute(0, colors[0]));
     } else {
-        console.log("makeEdge: invalid array size of colors given\n");
+        console.log("makePath: invalid array size of colors given\n");
     }
 
-    // add the appropriate neighbor node to each node
-    node_start.neighbors.push(node_end);
-    node_end.neighbors.push(node_start);
+    // add the appropriate neighbor location to each location
+    location_start.neighbors.push(location_end);
+    location_end.neighbors.push(location_start);
 
-    // add this path to each node
-    node_start.paths.push(edge);
-    node_end.paths.push(edge);
+    // add this path to each location
+    location_start.paths.push(path);
+    location_end.paths.push(path);
 
-    return edge;
+    return path;
 }
 
 // Declaration of map elements
-var nodes = [
-    node_A = makeNode("A", 200, 100),
-    node_B = makeNode("B", 300, 200),
-    node_C = makeNode("C", 200, 300, -20), // put label off to the left
-    node_D = makeNode("D", 100, 200, -20), // ^
-    node_E = makeNode("E", 400, 400),
-    node_F = makeNode("F", 330, 77),
+var locations = [
+    location_A = makeLocation("A", 200, 100),
+    location_B = makeLocation("B", 300, 200),
+    location_C = makeLocation("C", 200, 300, -20), // put label off to the left
+    location_D = makeLocation("D", 100, 200, -20), // ^
+    location_E = makeLocation("E", 400, 400),
+    location_F = makeLocation("F", 330, 77),
 ];
-var edges = [
-    edge_AB = makeEdge(node_A, node_B, 3, ["blue"]),
-    edge_BE = makeEdge(node_B, node_E, 5, ["red"]),
-    edge_BD = makeEdge(node_B, node_D, 4, ["gray"]),
-    edge_CB = makeEdge(node_C, node_B, 3, ["black", "blue"]),
-    edge_CE = makeEdge(node_C, node_E, 6, ["green"]),
-    edge_AD = makeEdge(node_A, node_D, 4, ["gray", "gray"]),
-    edge_AF = makeEdge(node_A, node_F, 4, ["red"]),
-    edge_EF = makeEdge(node_E, node_F, 7, ["gray"]),
+var paths = [
+    path_AB = makePath(location_A, location_B, 3, ["blue"]),
+    path_BE = makePath(location_B, location_E, 5, ["red"]),
+    path_BD = makePath(location_B, location_D, 4, ["gray"]),
+    path_CB = makePath(location_C, location_B, 3, ["black", "blue"]),
+    path_CE = makePath(location_C, location_E, 6, ["green"]),
+    path_AD = makePath(location_A, location_D, 4, ["gray", "gray"]),
+    path_AF = makePath(location_A, location_F, 4, ["red"]),
+    path_EF = makePath(location_E, location_F, 7, ["gray"]),
 ];
 
-// modify nodes to do things
-nodes.forEach(function (n, index) {
-    // rearranges the nodes to appear on top of the routes
-    n.appendTo(s);
-});
+// rearranges the location SVG elements to appear on top of the routes
+locations.forEach(function (n) { n.appendTo(s); });
