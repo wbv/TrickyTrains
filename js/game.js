@@ -2,40 +2,47 @@ var s = Snap(800,600);
 
 // key-value objects which translate a color string to the needed colors.
 // you could think of this as a theme, if you want.
-var route_fill_color = {
+var path_fill_color = {
     "red":   "#f00",
     "blue":  "#00f",
     "green": "#0f0",
     "gray":  "#666",
     "black": "#111",
-}
-var route_stroke_color = {
+};
+var path_stroke_color = {
     "red":   "#555",
     "blue":  "#555",
     "green": "#555",
     "gray":  "#555",
     "black": "#555",
-}
-var route_empty_opacity = {
+};
+var path_empty_opacity = {
     "red":   0.35,
     "blue":  0.35,
     "green": 0.35,
     "gray":  0.20,
     "black": 0.35,
-}
-var route_filled_opacity = {
+};
+var path_filled_opacity = {
     "red":   0.95,
     "blue":  0.95,
     "green": 0.95,
     "gray":  0.95,
     "black": 0.95,
-}
+};
+
+var location_color = {
+    "normal": "#000",
+    "selected": "#ddd",
+    "suggested": "#000",
+};
 
 //* makeLocation()
 // creates a circle and a text label at the given coordinates. The text label
 // (the object returned by the Snap.text method) can be accessed by the the
-// makeLocation-returned object's attribute of "label" (e.g. location_A.label). The
-// optional offset arguments can place the label anywhere around the location
+// makeLocation-returned object's attribute of "label" (e.g. location_A.label).
+// The optional offset arguments can place the label anywhere around the
+// location
 function makeLocation(name, x, y, label_x_offset, label_y_offset) {
     // label_x_offset and label_y_offset are optional arguments here,
     // the numbers on the far right are default values if they are undefined
@@ -47,7 +54,11 @@ function makeLocation(name, x, y, label_x_offset, label_y_offset) {
     });
     container.id = name;
 
-    var newlocation = s.circle(x, y, 8);
+    var newlocation = s.circle(x, y, 8).attr({
+        "fill": location_color["normal"],
+        "stroke": "#000",
+        "stroke-width": 2,
+    });
 
     // create hover-behavior animation
     newlocation.hover(function () {
@@ -124,10 +135,10 @@ function makePath(location_start, location_end, weight, colors) {
                                6,
                                2);
             block.attr({
-                "stroke":       route_stroke_color[color],
-                "fill":         route_fill_color[color],
-                "fill-opacity": route_empty_opacity[color],
-                "strokeWidth": 1
+                "stroke":       path_stroke_color[color],
+                "stroke-width": 1,
+                "fill":         path_fill_color[color],
+                "fill-opacity": path_empty_opacity[color],
             });
             block.transform("rotate("+path_angle+","+s_x+","+s_y+")");
             route.append(block);
@@ -178,4 +189,4 @@ var paths = [
 ];
 
 // rearranges the location SVG elements to appear on top of the routes
-locations.forEach(function (n) { n.appendTo(s); });
+locations.forEach(function (l) { l.appendTo(s); });
